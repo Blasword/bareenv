@@ -7,6 +7,8 @@ const PAINT = {
   'silent-fallback': ['35', ''],
   'baseline-broken': ['33', ''],
   'case-invalid': ['2', ''],
+  'not-observed': ['2', ''],
+  'accepted-invalid': ['2', ''],
   dim: ['2', ''],
   bold: ['1', ''],
   red: ['31', ''],
@@ -84,14 +86,14 @@ function indent(text) {
     .join('\n');
 }
 
-export function renderFindings(findings, reproByLabel, { color = false } = {}) {
-  if (findings.length === 0) {
-    return paint('no environment-dependent failures found', 'dim', color);
-  }
-
+export function renderFindings(findings, reproByLabel, { color = false, observations = [] } = {}) {
   const lines = [];
   const dependent = findings.filter((finding) => finding.type === 'env-dependent');
   const fallback = findings.filter((finding) => finding.type === 'silent-fallback');
+
+  if (dependent.length === 0 && fallback.length === 0) {
+    lines.push(paint('no environment-dependent failures found', 'dim', color));
+  }
 
   if (dependent.length > 0) {
     lines.push(paint(`${dependent.length} environment-dependent failure(s)`, 'red', color));
@@ -115,10 +117,23 @@ export function renderFindings(findings, reproByLabel, { color = false } = {}) {
     }
   }
 
+  // Informational: an invalid value was accepted and something changed, but that alone
+  // does not prove a silent fallback. Never counted, never fails a build.
+  if (observations.length > 0) {
+    lines.push(paint(`${observations.length} accepted-invalid value(s), not counted`, 'dim', color));
+    for (const observation of observations) {
+      lines.push(`  ${paint(observation.label, 'dim', color)}`);
+      lines.push(`    ${observation.detail}`);
+    }
+  }
+
   return lines.join('\n').trimEnd();
 }
 
-export function renderSummary({ cases, findings, durationMs }, { color = false } = {}) {
+export function renderSummary(
+  { cases, findings, observations = [], durationMs },
+  { color = false } = {},
+) {
   const broken = cases.filter((entry) => entry.verdict === 'baseline-broken').length;
   const skipped = cases.filter((entry) => entry.verdict === 'case-invalid').length;
   const parts = [
@@ -126,6 +141,7 @@ export function renderSummary({ cases, findings, durationMs }, { color = false }
     `${formatDuration(durationMs)}`,
     `${findings.length} finding(s)`,
   ];
+  if (observations.length > 0) parts.push(`${observations.length} observation(s)`);
   if (skipped > 0) {
     parts.push(`${skipped} case(s) could not start, so nothing is attributed to them`);
   }

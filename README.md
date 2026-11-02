@@ -50,8 +50,10 @@ On macOS and Linux the repro line reads `env -u JAVA_HOME node fixtures/ghidra-v
 
 The `invalid` row is the important one. An explicitly invalid `JAVA_HOME` is *rejected*
 here, which is correct, so it is not reported as a finding. Point the same run at
-`fixtures/fallback-verifier.mjs` instead and that row becomes `silent-fallback` — the
-case where a bad explicit choice is quietly replaced by a discovered one.
+`fixtures/fallback-verifier.mjs` instead and that row becomes `accepted-invalid`: the bad
+value was not rejected and the output changed. That is *not* counted as a finding, because
+a tool that merely echoes the bad path into a diagnostic is not the same as one that
+quietly swaps in a discovered value. Add `--strict-fallback` to count it anyway.
 
 ## Install
 
@@ -96,6 +98,7 @@ Options:
 | `--json <path>` | report path, default `.bareenv/report.json` |
 | `--compare <path>` | flag findings that are not in a previous report |
 | `--fail-on-findings` | exit 1 when a finding exists |
+| `--strict-fallback` | count accepted-invalid values as findings |
 | `--verbose` | print the tail of failing output |
 
 Exit codes: `0` ran, `1` baseline fails or `--fail-on-findings` hit, `2` new findings
@@ -108,9 +111,15 @@ versus `--compare`, or a usage error.
 | `pass` | same result as the baseline |
 | `env-dependent` | baseline passes, this case fails — **a finding** |
 | `expected-fail` | an explicitly invalid value was rejected — the behavior you want |
-| `silent-fallback` | an explicitly invalid value was accepted — **a finding** |
+| `not-observed` | identical behavior, so the command never looked at this variable |
+| `accepted-invalid` | the bad value was not rejected and output changed — **not counted**, see `--strict-fallback` |
+| `silent-fallback` | same, but counted — only with `--strict-fallback` |
 | `baseline-broken` | the command fails before any variable changes; fix that first |
 | `case-invalid` | the case could not start (for example an empty `PATH` on Windows) |
+
+Only `env-dependent` counts by default. `not-observed` exists because `java -version` does
+not read `JAVA_HOME`: reporting that it "accepted an invalid `JAVA_HOME`" would be a false
+positive, and a tool that cries wolf once gets uninstalled.
 
 ## Design notes
 

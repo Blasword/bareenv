@@ -26,6 +26,7 @@ run options
   --json <path>            report path (default ${DEFAULT_REPORT})
   --compare <path>         compare against a previous report and flag new findings
   --fail-on-findings       exit 1 when anything is environment-dependent
+  --strict-fallback        count accepted-invalid values as findings too
   --no-color               disable color
   --verbose                print the tail of failing case output
   --quiet                  only print findings
@@ -82,6 +83,7 @@ export async function main(argv) {
         json: { type: 'string' },
         compare: { type: 'string' },
         'fail-on-findings': { type: 'boolean', default: false },
+        'strict-fallback': { type: 'boolean', default: false },
         'no-color': { type: 'boolean', default: false },
         verbose: { type: 'boolean', default: false },
         quiet: { type: 'boolean', default: false },
@@ -211,7 +213,9 @@ async function run(values, command, cwd) {
   }
 
   const durationMs = Date.now() - startedAt;
-  const { cases, findings, baselineOk } = analyze(results);
+  const { cases, findings, observations, baselineOk } = analyze(results, {
+    strictFallback: values['strict-fallback'],
+  });
 
   if (!values.quiet) {
     process.stdout.write(`${renderTable(cases, { color, verbose: values.verbose })}\n\n`);
@@ -224,8 +228,10 @@ async function run(values, command, cwd) {
     }
   }
 
-  process.stdout.write(`${renderFindings(findings, reproByLabel, { color })}\n`);
-  process.stdout.write(`\n${renderSummary({ cases, findings, durationMs }, { color })}\n`);
+  process.stdout.write(`${renderFindings(findings, reproByLabel, { color, observations })}\n`);
+  process.stdout.write(
+    `\n${renderSummary({ cases, findings, observations, durationMs }, { color })}\n`,
+  );
 
   const report = {
     tool: 'bareenv',
@@ -248,6 +254,7 @@ async function run(values, command, cwd) {
       tail: entry.verdict === 'pass' ? undefined : entry.stderr.trim().split(/\r?\n/).slice(-8).join('\n'),
     })),
     findings,
+    observations,
   };
   writeReport(reportPath, report);
 

@@ -46,13 +46,32 @@ assert.match(reported.output, /GhidraLaunchError/);
 assert.match(reported.output, /repro:/);
 checks.push('reported bug is classified as env-dependent');
 
-// 2. The other bug class: an explicit invalid selection is quietly replaced.
+// 2. An accepted invalid value is an observation by default, and a finding on request.
+//    A tool that merely echoes the bad path back is not proof of a silent fallback, so
+//    this cannot count by default without drowning the real signal.
 const fallback = runBareenv(
   ['run', '--var', 'JAVA_HOME', '--json', join(jdk.root, 'b.json'), '--', 'node', 'fixtures/fallback-verifier.mjs'],
   env,
 );
-assert.match(fallback.output, /invalid JAVA_HOME\s+0\s+\S+\s+silent-fallback/);
-checks.push('silent fallback is classified separately');
+assert.match(fallback.output, /invalid JAVA_HOME\s+0\s+\S+\s+accepted-invalid/);
+assert.match(fallback.output, /0 finding\(s\)/);
+
+const strict = runBareenv(
+  [
+    'run',
+    '--strict-fallback',
+    '--var',
+    'JAVA_HOME',
+    '--json',
+    join(jdk.root, 'b2.json'),
+    '--',
+    'node',
+    'fixtures/fallback-verifier.mjs',
+  ],
+  env,
+);
+assert.match(strict.output, /invalid JAVA_HOME\s+0\s+\S+\s+silent-fallback/);
+checks.push('accepted-invalid is an observation by default and a finding under --strict-fallback');
 
 // 3. A command that fails on its own must not produce environment findings.
 const broken = runBareenv(
