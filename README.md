@@ -233,22 +233,33 @@ Both are fixed and covered by regression tests. They stayed hidden because the O
 Read these before trusting a green result.
 
 - `single` mode does not test interactions between variables. Use `--mode full` when it
-  matters, but the case count grows fast.
+  matters, but the case count grows fast — [#2](https://github.com/Blasword/bareenv/issues/2).
 - Cases run in the same working directory. A command that mutates its own state can leak
-  between cases; `--var` runs are sequential for that reason.
+  between cases; `--var` runs are sequential for that reason —
+  [#3](https://github.com/Blasword/bareenv/issues/3).
 - Timeouts kill the direct child only. A command that spawns grandchildren may leave
-  them behind.
+  them behind — [#1](https://github.com/Blasword/bareenv/issues/1).
 - `detect` is a regex pass: it finds candidates, not relevance.
 - A `pass` on a case only means the exit code matched the baseline. Semantics are the
   command's business.
 
 ## Roadmap
 
-- [ ] per-case isolation: fresh temp dir, optional `--clean`
+Tracked as issues:
+
+- [#1](https://github.com/Blasword/bareenv/issues/1) — a timeout should kill the whole
+  process tree, not only the direct child
+- [#2](https://github.com/Blasword/bareenv/issues/2) — `--mode pairwise`, so two-variable
+  interactions are covered without the `4^n` blow-up
+- [#3](https://github.com/Blasword/bareenv/issues/3) — isolation, so one case cannot
+  contaminate the next
+
+Not filed yet:
+
 - [ ] `bareenv probe`: discover which variables a command actually reads by running it
       once under an instrumented `env`
 - [ ] SARIF output, so findings show up in GitHub code scanning
-- [ ] a GitHub Action wrapper with the report as a PR comment
+- [ ] a PR comment carrying the report when the action finds something
 
 ## License
 
