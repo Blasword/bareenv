@@ -1,6 +1,6 @@
 # bareenv
 
-[![ci](https://github.com/Blasword/bareenv/actions/workflows/ci.yml/badge.svg)](https://github.com/Blasword/bareenv/actions/workflows/ci.yml)
+[![ci](https://github.com/Blasword/bareenv/actions/workflows/ci.yml/badge.svg)](https://github.com/Blasword/bareenv/actions/workflows/ci.yml) [![action](https://github.com/Blasword/bareenv/actions/workflows/action.yml/badge.svg)](https://github.com/Blasword/bareenv/actions/workflows/action.yml)
 
 **Your pipeline was never run with `JAVA_HOME` unset.**
 
@@ -75,18 +75,24 @@ quietly swaps in a discovered value. Add `--strict-fallback` to count it anyway.
 
 ## Install
 
-Not on npm yet — run it from a clone:
+In CI, as an action — no clone, no install:
+
+```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: 22
+- uses: Blasword/bareenv@v0.1.0
+  with:
+    vars: JAVA_HOME,PATH
+    command: npm test
+```
+
+Locally, from a clone. There is no npm package yet:
 
 ```sh
 git clone https://github.com/Blasword/bareenv
 cd bareenv
 node bin/bareenv.mjs run --var JAVA_HOME -- npm run verify
-```
-
-Once v0.1 is tagged and published as `bareenv`, this becomes:
-
-```sh
-npx bareenv run --var JAVA_HOME -- npm run verify
 ```
 
 ## Usage
@@ -119,8 +125,14 @@ Options:
 | `--strict-fallback` | count accepted-invalid values as findings |
 | `--verbose` | print the tail of failing output |
 
-Exit codes: `0` ran, `1` baseline fails or `--fail-on-findings` hit, `2` new findings
-versus `--compare`, or a usage error.
+Exit codes:
+
+| code | meaning |
+| --- | --- |
+| `0` | ran (findings may still exist, see `--fail-on-findings`) |
+| `1` | the baseline fails, or `--fail-on-findings` found something |
+| `2` | findings that are not in the `--compare` report |
+| `3` | usage error |
 
 ## What the verdicts mean
 
@@ -152,31 +164,17 @@ positive:
 - **A shell is only used on Windows for `.cmd`/`.bat`.** Going through `cmd.exe` for
   everything makes quoting and `PATH` handling fragile; a direct spawn does not.
 
-## In CI
+## Failing only on new findings
 
-As an action, so adoption is one step:
-
-```yaml
-- uses: actions/setup-node@v4
-  with:
-    node-version: 22
-- uses: Blasword/bareenv@v0.1.0
-  with:
-    vars: JAVA_HOME,PATH
-    command: npm test
-```
-
-Or straight from the command line:
-
-```sh
-node bin/bareenv.mjs run --var JAVA_HOME,PATH --fail-on-findings -- npm test
-```
-
-To fail only on *new* environment dependencies, keep the report from the base branch and:
+`--compare` checks the report against a previous run, so a PR that introduces a new
+environment dependency fails while pre-existing ones stay quiet. Keep the base branch's
+report as an artifact and point at it:
 
 ```sh
 node bin/bareenv.mjs run --var JAVA_HOME --compare base.bareenv.json -- npm test
 ```
+
+That exits `2` when the PR added a dependency and `0` when it only inherited old ones.
 
 ## Why this exists, in numbers
 

@@ -1,7 +1,7 @@
 {
   "name": "bareenv",
   "version": "0.1.0",
-  "description": "Find the environment combinations your CLI never tested.",
+  "description": "Catch the environment combinations your pipeline never tested.",
   "type": "module",
   "bin": {
     "bareenv": "bin/bareenv.mjs"

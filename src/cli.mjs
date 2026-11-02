@@ -94,7 +94,7 @@ export async function main(argv) {
   } catch (error) {
     process.stderr.write(`${error.message}\n`);
     process.stderr.write(`${USAGE}\n`);
-    return 2;
+    return 3;
   }
 
   const { values, positionals } = parsed;
@@ -106,13 +106,13 @@ export async function main(argv) {
 
   if (values.help || positionals.length === 0 || positionals[0] === 'help') {
     process.stdout.write(`${USAGE}\n`);
-    return positionals.length === 0 && !values.help ? 2 : 0;
+    return positionals.length === 0 && !values.help ? 3 : 0;
   }
 
   const subcommand = SUBCOMMANDS.has(positionals[0]) ? positionals[0] : null;
   if (!subcommand) {
     process.stderr.write(`unknown subcommand: ${positionals[0]}\n${USAGE}\n`);
-    return 2;
+    return 3;
   }
 
   const cwd = values.cwd ? resolve(values.cwd) : process.cwd();
@@ -170,17 +170,17 @@ async function run(values, command, cwd) {
 
   if (argv.length === 0) {
     process.stderr.write(`no command given\n\n  bareenv run --var JAVA_HOME -- <command...>\n`);
-    return 2;
+    return 3;
   }
   if (vars.length === 0) {
     process.stderr.write(
       `no variables to vary\n\n  bareenv run --var JAVA_HOME -- <command...>\n  bareenv detect   # to find candidates\n`,
     );
-    return 2;
+    return 3;
   }
   if (vars.length > 8) {
     process.stderr.write(`${vars.length} variables is too many for one matrix; pass at most 8\n`);
-    return 2;
+    return 3;
   }
 
   let matrix;
@@ -188,7 +188,7 @@ async function run(values, command, cwd) {
     matrix = buildMatrix(vars, mode);
   } catch (error) {
     process.stderr.write(`${error.message}\n`);
-    return 2;
+    return 3;
   }
 
   if (!values.quiet) {
