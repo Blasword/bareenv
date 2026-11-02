@@ -1,0 +1,41 @@
+{
+  "name": "bareenv",
+  "version": "0.1.0",
+  "description": "Find the environment combinations your CLI never tested.",
+  "type": "module",
+  "bin": {
+    "bareenv": "bin/bareenv.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node test/smoke.mjs",
+    "demo": "node fixtures/demo.mjs"
+  },
+  "keywords": [
+    "environment",
+    "env",
+    "ci",
+    "testing",
+    "matrix",
+    "cli",
+    "reproducibility",
+    "flaky"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Blasword/bareenv"
+  },
+  "homepage": "https://github.com/Blasword/bareenv#readme",
+  "bugs": {
+    "url": "https://github.com/Blasword/bareenv/issues"
+  }
+}
