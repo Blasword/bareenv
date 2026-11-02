@@ -1,10 +1,13 @@
 # bareenv
 
-**Find the environment combinations your CLI never tested.**
+**Your pipeline was never run with `JAVA_HOME` unset.**
 
-Every "works on my machine" bug is a missing test case in one dimension: the environment.
-`bareenv` runs your command once per environment combination and tells you which ones
-break, why, and the exact command to reproduce it.
+`bareenv` runs a command once per environment combination — unset, empty, invalid — and
+tells you which ones break, why, and the exact command to reproduce it.
+
+It is built for your own scripts: the verify step, the release gate, the `doctor` command
+you wrote once and never tested without the variable that happened to be set on your
+laptop.
 
 No dependencies. No config to start. Node 18+.
 
@@ -19,6 +22,19 @@ inspection succeeded, `rea doctor` reported healthy — and the launch failed at
 Finding that took a maintainer several rounds of hand-run environment combinations,
 written up by hand in the issue. That is a tool's job. `bareenv` is that tool: it
 turns one hand-built matrix into one command.
+
+## What this is not
+
+It is not an audit of other people's tools.
+
+Running the corpus against six mature toolchains — `java`, `node`, `python`, `dotnet`,
+Maven and Gradle — produced **zero findings**. Every one of them rejects a bogus
+`JAVA_HOME` and falls back cleanly when it is unset.
+
+That is the finding, not a failure of the tool. The bug this catches does not live in
+products that thousands of people run every day; it lives in scripts that nobody ever
+exercised twice. Which is exactly what `#8171` was: not a Ghidra bug, but a verification
+script inside one repository.
 
 ## Demo
 
@@ -166,6 +182,19 @@ node scripts/corpus.mjs --only mvn,gradle
 It writes `corpus-report.md` and `corpus-report.json`. Tools that are not installed are
 listed as skipped, never as passes: a corpus that silently drops what it could not find
 reads as a clean sweep when it is not.
+
+## Two bugs it found in itself
+
+The first run against a real `.cmd` shim exposed two defects in `bareenv`'s own
+executable pinning, both silent until then:
+
+- `{ ...process.env }` turns the case-insensitive environment object into a plain one, so
+  a Windows `Path` key is not found by `env.PATH` and resolution quietly fell through.
+- Maven ships an extensionless `mvn` script next to `mvn.cmd`; the extensionless one was
+  tried first, so Windows picked a file it cannot execute.
+
+Both are fixed and covered by regression tests. They stayed hidden because the OS resolves
+`.exe` files from `PATH` by itself — only shims that need `PATHEXT` exposed them.
 
 ## Limits
 
