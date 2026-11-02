@@ -1,0 +1,23 @@
+{
+  "note": "Runtime-selecting CLIs: tools that pick an external runtime and hand it to a launcher. Commands are diagnostic where possible, because a version printer rarely exercises runtime discovery while a command that prints a resolved path does.",
+  "timeout": 60000,
+  "cases": [
+    { "name": "java", "command": ["java", "-XshowSettings:properties", "-version"], "vars": ["JAVA_HOME"] },
+    { "name": "mvn", "command": ["mvn", "-v"], "vars": ["JAVA_HOME", "M2_HOME"] },
+    { "name": "gradle", "command": ["gradle", "--version"], "vars": ["JAVA_HOME", "GRADLE_USER_HOME"] },
+    { "name": "cargo", "command": ["cargo", "--version"], "vars": ["CARGO_HOME", "RUSTUP_HOME"] },
+    { "name": "rustup", "command": ["rustup", "show"], "vars": ["RUSTUP_HOME", "CARGO_HOME"] },
+    { "name": "node", "command": ["node", "-e", "console.log(module.paths.join('\\n'))"], "vars": ["NODE_OPTIONS", "NODE_PATH"] },
+    { "name": "npm", "command": ["npm", "config", "get", "prefix"], "vars": ["NPM_CONFIG_PREFIX", "NODE_PATH"] },
+    { "name": "python", "command": ["python", "-c", "import sys; print(sys.path)"], "vars": ["PYTHONHOME", "PYTHONPATH"] },
+    { "name": "conda", "command": ["conda", "info"], "vars": ["CONDA_PREFIX", "CONDA_DEFAULT_ENV"] },
+    { "name": "go", "command": ["go", "env", "GOROOT", "GOPATH"], "vars": ["GOROOT", "GOPATH"] },
+    { "name": "dotnet", "command": ["dotnet", "--info"], "vars": ["DOTNET_ROOT", "DOTNET_CLI_HOME"] },
+    { "name": "docker", "command": ["docker", "context", "ls"], "vars": ["DOCKER_HOST", "DOCKER_CONFIG"] },
+    { "name": "kubectl", "command": ["kubectl", "config", "view"], "vars": ["KUBECONFIG"] },
+    { "name": "flutter", "command": ["flutter", "--version"], "vars": ["ANDROID_HOME", "JAVA_HOME"] },
+    { "name": "gh", "command": ["gh", "config", "get", "git_protocol"], "vars": ["GH_CONFIG_DIR"] },
+    { "name": "ruby", "command": ["ruby", "-e", "puts Gem.dir"], "vars": ["GEM_HOME", "RUBYOPT"] },
+    { "name": "php", "command": ["php", "-r", "echo ini_get('extension_dir');"], "vars": ["PHP_INI_SCAN_DIR"] }
+  ]
+}

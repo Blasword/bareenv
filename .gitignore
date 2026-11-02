@@ -1,3 +1,5 @@
 node_modules/
 .bareenv/
 *.log
+corpus-report.md
+corpus-report.json

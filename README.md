@@ -152,6 +152,21 @@ To fail only on *new* environment dependencies, keep the report from the base br
 bareenv run --var JAVA_HOME --compare base.bareenv.json -- npm test
 ```
 
+## Corpus
+
+`corpus.json` lists runtime-selecting CLIs and one diagnostic command per tool, because a
+version printer rarely exercises runtime discovery while a command that prints a resolved
+path does.
+
+```sh
+node scripts/corpus.mjs            # every installed tool
+node scripts/corpus.mjs --only mvn,gradle
+```
+
+It writes `corpus-report.md` and `corpus-report.json`. Tools that are not installed are
+listed as skipped, never as passes: a corpus that silently drops what it could not find
+reads as a clean sweep when it is not.
+
 ## Limits
 
 Read these before trusting a green result.
