@@ -134,6 +134,9 @@ positive:
 - run: npx bareenv run --var JAVA_HOME,PATH --fail-on-findings -- npm test
 ```
 
+The `npx` form waits on the npm publish. Until then, clone the repo in the job and call
+`node bin/bareenv.mjs` with the same flags.
+
 To fail only on *new* environment dependencies, keep the report from the base branch and:
 
 ```sh
