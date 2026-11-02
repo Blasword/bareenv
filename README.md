@@ -1,5 +1,7 @@
 # bareenv
 
+[![ci](https://github.com/Blasword/bareenv/actions/workflows/ci.yml/badge.svg)](https://github.com/Blasword/bareenv/actions/workflows/ci.yml)
+
 **Your pipeline was never run with `JAVA_HOME` unset.**
 
 `bareenv` runs a command once per environment combination — unset, empty, invalid — and
