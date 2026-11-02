@@ -1,0 +1,30 @@
+name: action
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  self-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # A command that only passes when BAREENV_TEST is set. The baseline is set, so the
+      # unset case must be reported as a finding and the step must fail.
+      - id: probe
+        uses: ./
+        continue-on-error: true
+        env:
+          BAREENV_TEST: set
+        with:
+          vars: BAREENV_TEST
+          command: node -e "process.exit(process.env.BAREENV_TEST ? 0 : 1)"
+          fail-on-findings: 'true'
+
+      - name: the action must report the unset case
+        run: test "${{ steps.probe.outcome }}" = "failure"

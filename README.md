@@ -152,21 +152,53 @@ positive:
 
 ## In CI
 
+As an action, so adoption is one step:
+
 ```yaml
 - uses: actions/setup-node@v4
   with:
     node-version: 22
-- run: npx bareenv run --var JAVA_HOME,PATH --fail-on-findings -- npm test
+- uses: Blasword/bareenv@v0.1.0
+  with:
+    vars: JAVA_HOME,PATH
+    command: npm test
 ```
 
-The `npx` form waits on the npm publish. Until then, clone the repo in the job and call
-`node bin/bareenv.mjs` with the same flags.
+Or straight from the command line:
+
+```sh
+node bin/bareenv.mjs run --var JAVA_HOME,PATH --fail-on-findings -- npm test
+```
 
 To fail only on *new* environment dependencies, keep the report from the base branch and:
 
 ```sh
-bareenv run --var JAVA_HOME --compare base.bareenv.json -- npm test
+node bin/bareenv.mjs run --var JAVA_HOME --compare base.bareenv.json -- npm test
 ```
+
+## Why this exists, in numbers
+
+The shape of the failure is always the same: a variable is set on the machine where the
+script was written, and the CI job never sets it, so one cell of the matrix is never run.
+
+GitHub issue search, `type:issue`, open:
+
+| query | issues |
+| --- | --- |
+| `JAVA_HOME "not set"` | 1126 |
+| `ANDROID_HOME "not set"` | 3624 |
+
+Three of them, picked because they are the exact shape this tool reports:
+
+- [bazelbuild/examples#715](https://github.com/bazelbuild/examples/issues/715) — the macOS
+  CI config never sets `ANDROID_HOME`, so that combination was never exercised.
+- [unoplatform/uno.check#591](https://github.com/unoplatform/uno.check/issues/591) — both
+  variables unset gives a `NullReferenceException` instead of a readable error.
+- [uber/nanoscope#56](https://github.com/uber/nanoscope/issues/56) — a maintainer asking
+  for the check this tool automates.
+
+These are mentions, not confirmed instances, and the counts include unrelated uses. The
+point is the order of magnitude: this is not a rare failure mode, it is a routine one.
 
 ## Corpus
 

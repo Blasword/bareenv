@@ -1,0 +1,43 @@
+name: bareenv
+description: Run a command once per environment combination and report the combinations that break
+author: Blasword
+branding:
+  icon: shield
+  color: gray-dark
+
+inputs:
+  vars:
+    description: Comma separated environment variables to vary
+    required: true
+  command:
+    description: Command to run under each combination
+    required: true
+  timeout:
+    description: Per-case timeout in milliseconds
+    required: false
+    default: '120000'
+  fail-on-findings:
+    description: Fail the step when an environment-dependent failure is found
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - id: run
+      shell: bash
+      # Values reach the script through the environment so a command containing quotes
+      # cannot be spliced into the shell command line.
+      env:
+        BAREENV_VARS: ${{ inputs.vars }}
+        BAREENV_COMMAND: ${{ inputs.command }}
+        BAREENV_TIMEOUT: ${{ inputs.timeout }}
+        BAREENV_FAIL: ${{ inputs['fail-on-findings'] }}
+      run: |
+        set -euo pipefail
+        args=(run --var "$BAREENV_VARS" --timeout "$BAREENV_TIMEOUT")
+        args+=(--json "${RUNNER_TEMP:-/tmp}/bareenv-report.json")
+        if [ "$BAREENV_FAIL" = "true" ]; then
+          args+=(--fail-on-findings)
+        fi
+        node "$GITHUB_ACTION_PATH/bin/bareenv.mjs" "${args[@]}" -- bash -c "$BAREENV_COMMAND"
