@@ -6,6 +6,7 @@ import { delimiter, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { createFakeJdk } from '../fixtures/fake-jdk.mjs';
+import { resolveExecutable } from '../src/runner.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -82,6 +83,17 @@ assert.equal(broken.status, 1);
 assert.match(broken.output, /baseline-broken/);
 assert.doesNotMatch(broken.output, /env-dependent/);
 checks.push('a broken baseline is reported as broken, not as env-dependent');
+
+// 4. `{ ...process.env }` loses the case-insensitive lookup, so a Windows `Path` key
+//    must still resolve. Without this the pinning silently stopped working and every
+//    `.cmd` shim died with ENOENT.
+const lowered = { path: env.PATH };
+assert.notEqual(
+  resolveExecutable('node', root, lowered),
+  'node',
+  'resolution must tolerate a lowercased PATH key',
+);
+checks.push('executable resolution survives a lowercased PATH key');
 
 for (const check of checks) process.stdout.write(`ok  ${check}\n`);
 process.stdout.write(`\n${checks.length} checks passed\n`);

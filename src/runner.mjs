@@ -36,21 +36,39 @@ function readIfPresent(path) {
 }
 
 /**
+ * Environment objects on Windows may spell the key `Path`, and `{ ...process.env }` turns
+ * the case-insensitive magic object into a plain one where `env.PATH` is undefined.
+ * Reading through this helper is what keeps resolution working after a spread.
+ */
+function envValue(env, name) {
+  if (env[name] !== undefined) return env[name];
+  const upper = name.toUpperCase();
+  const key = Object.keys(env).find((candidate) => candidate.toUpperCase() === upper);
+  return key === undefined ? undefined : env[key];
+}
+
+/**
  * Pin the command to an absolute path before any case runs.
  *
  * Without this, varying PATH would make the shell fail to find `node`/`npm` and every
  * PATH case would look like a finding. Resolving once means PATH cases test what the
  * command does with a crippled PATH, not whether our own spawn still works.
+ *
+ * `.cmd` and `.bat` shims depend on this: the OS resolves `java.exe` from PATH by itself,
+ * but it will not invent `mvn.cmd`, so an unresolved shim fails with ENOENT.
  */
 export function resolveExecutable(name, cwd, env) {
   if (isAbsolute(name) || /[\\/]/.test(name)) return resolve(cwd, name);
 
+  const pathValue = String(envValue(env, 'PATH') ?? '');
+  // .cmd shims ship next to an extensionless `mvn` script for POSIX; the bare name is
+  // looked up last, otherwise Windows would pick the file it cannot execute.
   const extensions =
     process.platform === 'win32'
-      ? [''].concat((env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';')).filter(Boolean)
+      ? [...String(envValue(env, 'PATHEXT') ?? '.COM;.EXE;.BAT;.CMD').split(';'), '']
       : [''];
 
-  for (const dir of (env.PATH ?? '').split(delimiter)) {
+  for (const dir of pathValue.split(delimiter)) {
     if (!dir) continue;
     for (const extension of extensions) {
       const candidate = join(dir, name + extension);

@@ -1,5 +1,6 @@
 node_modules/
 .bareenv/
+.gradle-home/
 *.log
 corpus-report.md
 corpus-report.json
