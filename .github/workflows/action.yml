@@ -14,8 +14,8 @@ jobs:
         with:
           node-version: 22
 
-      # A command that only passes when BAREENV_TEST is set. The baseline is set, so the
-      # unset case must be reported as a finding and the step must fail.
+      # Passes only while BAREENV_TEST is set. The baseline has it set, so the unset case
+      # has to be reported, and with fail-on-findings the step has to fail.
       - id: probe
         uses: ./
         continue-on-error: true
@@ -23,8 +23,28 @@ jobs:
           BAREENV_TEST: set
         with:
           vars: BAREENV_TEST
-          command: node -e "process.exit(process.env.BAREENV_TEST ? 0 : 1)"
+          command: 'test -n "$BAREENV_TEST"'
           fail-on-findings: 'true'
 
-      - name: the action must report the unset case
+      - name: the step must fail when a finding exists
         run: test "${{ steps.probe.outcome }}" = "failure"
+
+      # The exit code alone is not enough: if the calling step's env never reached the
+      # action, the baseline would fail and the step would fail for the wrong reason.
+      - name: the report must blame the unset case, not the baseline
+        env:
+          REPORT: ${{ steps.probe.outputs.report }}
+        run: |
+          node -e '
+            const r = require(process.env.REPORT);
+            if (!r.baselineOk) {
+              console.error("baseline failed, so this run proves nothing");
+              process.exit(1);
+            }
+            const unset = r.findings.find((f) => f.state === "unset");
+            if (!unset) {
+              console.error("no unset finding: " + JSON.stringify(r.findings));
+              process.exit(1);
+            }
+            console.log("ok: " + unset.var + " -> " + unset.detail);
+          '

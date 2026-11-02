@@ -21,6 +21,11 @@ inputs:
     required: false
     default: 'true'
 
+outputs:
+  report:
+    description: Path to the JSON report for this run
+    value: ${{ steps.run.outputs.report }}
+
 runs:
   using: composite
   steps:
@@ -35,8 +40,9 @@ runs:
         BAREENV_FAIL: ${{ inputs['fail-on-findings'] }}
       run: |
         set -euo pipefail
-        args=(run --var "$BAREENV_VARS" --timeout "$BAREENV_TIMEOUT")
-        args+=(--json "${RUNNER_TEMP:-/tmp}/bareenv-report.json")
+        report="${RUNNER_TEMP:-/tmp}/bareenv-report.json"
+        echo "report=$report" >> "$GITHUB_OUTPUT"
+        args=(run --var "$BAREENV_VARS" --timeout "$BAREENV_TIMEOUT" --json "$report")
         if [ "$BAREENV_FAIL" = "true" ]; then
           args+=(--fail-on-findings)
         fi
